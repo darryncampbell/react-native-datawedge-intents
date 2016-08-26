@@ -1,3 +1,6 @@
+*This module is provided without guarantee or warranty*
+=======================================================
+
 # React-Native-DataWedge-Intents
 React Native Android module to interface with Zebra's DataWedge Intent API
 
