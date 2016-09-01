@@ -6,6 +6,7 @@ React Native Android module to interface with Zebra's DataWedge Intent API
 
 [![npm version](http://img.shields.io/npm/v/react-native-datawedge-intents.svg?style=flat-square)](https://npmjs.org/package/react-native-datawedge-intents "View this project on npm")
 [![npm downloads](http://img.shields.io/npm/dm/react-native-datawedge-intents.svg?style=flat-square)](https://npmjs.org/package/react-native-datawedge-intents "View this project on npm")
+[![npm downloads](http://img.shields.io/npm/dt/react-native-datawedge-intents.svg?style=flat-square)](https://npmjs.org/package/react-native-datawedge-intents "View this project on npm")
 [![npm licence](http://img.shields.io/npm/l/react-native-datawedge-intents.svg?style=flat-square)](https://npmjs.org/package/react-native-datawedge-intents "View this project on npm")
 
 This module is useful when developing React Native applications for Zebra mobile computers, making use of the Barcode Scanner
