@@ -64,6 +64,9 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     private static final String RECEIVED_SCAN_SOURCE = "com.symbol.datawedge.source";
     private static final String RECEIVED_SCAN_DATA = "com.symbol.datawedge.data_string";
     private static final String RECEIVED_SCAN_TYPE = "com.symbol.datawedge.label_type";
+	//  The previously registered receiver (if any)
+	private String registeredAction = null;
+	private String registeredCategory = null;
 
     private ReactApplicationContext reactContext;
 
@@ -83,6 +86,8 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       IntentFilter filter = new IntentFilter();
       filter.addAction(ACTION_ENUMERATEDLISET);
       reactContext.registerReceiver(myEnumerateScannersBroadcastReceiver, filter);
+	  if (this.registeredAction != null)
+		  registerReceiver(this.registeredAction, this.registeredCategory);
     }
 
     @Override
@@ -158,6 +163,8 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     public void registerReceiver(String action, String category)
     {
         Log.d(TAG, "Registering an Intent filter for action: " + action);
+		this.registeredAction = action;
+		this.registeredCategory = category;
         //  User has specified the intent action and category that DataWedge will be reporting
         try
         {
