@@ -44,7 +44,12 @@ DataWedgeIntents.sendIntent(DataWedgeIntents.ACTION_SOFTSCANTRIGGER,DataWedgeInt
 
 This module **requires the DataWedge service running** on the target device to be **correctly configured** to broadcast Android intents on each barcode scan with the appropriate action:
 
+### Output Plugin
+
+Please also ensure you disable the keyboard output plugin to avoid undesired effects on your application: https://developer.zebra.com/message/95397?et=watches.email.thread#95397
+
 ![Associate app](https://raw.githubusercontent.com/darryncampbell/react-native-datawedge-intents/master/screens/datawedge.png)
 
 For more information about DataWedge and how to configure it please visit Zebra [tech docs](http://techdocs.zebra.com/).  The DataWedge API that this module calls is detailed [here](http://techdocs.zebra.com/datawedge/5-0/guide/api/)
+
 
