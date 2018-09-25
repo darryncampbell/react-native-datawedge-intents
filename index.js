@@ -21,7 +21,11 @@ var DataWedgeIntents = {
     DISABLE_PLUGIN: RNDataWedgeIntents.DISABLE_PLUGIN,
 
     sendIntent(action, parameterValue) {
+        //  THIS METHOD IS DEPRECATED, use SendBroadcastWithExtras
         RNDataWedgeIntents.sendIntent(action, parameterValue);
+    },
+    sendBroadcastWithExtras(extrasObject) {
+        RNDataWedgeIntents.sendBroadcastWithExtras(extrasObject);
     },
     registerReceiver(action, category) {
         RNDataWedgeIntents.registerReceiver(action, category);

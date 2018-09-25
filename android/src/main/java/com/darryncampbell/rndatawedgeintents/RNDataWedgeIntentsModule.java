@@ -13,8 +13,12 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.json.JSONArray;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -22,6 +26,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Calendar;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.lang.SecurityException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
@@ -32,6 +37,10 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
@@ -43,6 +52,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
 
     private static final String TAG = RNDataWedgeIntentsModule.class.getSimpleName();
 
+    //  THESE ACTIONS ARE DEPRECATED, PLEASE SPECIFY THE ACTION AS PART OF THE CALL TO sendBroadcastWithExtras
     private static final String ACTION_SOFTSCANTRIGGER = "com.symbol.datawedge.api.ACTION_SOFTSCANTRIGGER";
     private static final String ACTION_SCANNERINPUTPLUGIN = "com.symbol.datawedge.api.ACTION_SCANNERINPUTPLUGIN";
     private static final String ACTION_ENUMERATESCANNERS = "com.symbol.datawedge.api.ACTION_ENUMERATESCANNERS";
@@ -60,6 +70,8 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     //  Enumerated Scanner receiver
     private static final String ACTION_ENUMERATEDLISET = "com.symbol.datawedge.api.ACTION_ENUMERATEDSCANNERLIST";
     private static final String KEY_ENUMERATEDSCANNERLIST = "DWAPI_KEY_ENUMERATEDSCANNERLIST";
+    //  END DEPRECATED PROPERTIES
+
     //  Scan data receiver
     private static final String RECEIVED_SCAN_SOURCE = "com.symbol.datawedge.source";
     private static final String RECEIVED_SCAN_DATA = "com.symbol.datawedge.data_string";
@@ -157,6 +169,105 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
         if (parameterValue != null && parameterValue.length() > 0)
             dwIntent.putExtra(parameterKey, parameterValue);
         this.reactContext.sendBroadcast(dwIntent);
+    }
+
+    @ReactMethod
+    public void sendBroadcastWithExtras(ReadableMap obj)
+    {
+        String action = obj.hasKey("action") ? obj.getString("action") : null;
+        Intent i = new Intent();
+        if (action != null)
+            i.setAction(action);
+
+        Map<String, Object> intentMap = recursivelyDeconstructReadableMap(obj);
+        Map<String, Object> extrasMap = null;
+        if (intentMap.containsKey("extras") && intentMap.get("extras") != null &&
+                intentMap.get("extras") instanceof Map)
+            extrasMap = (Map<String, Object>) intentMap.get("extras");
+
+        for (String key : extrasMap.keySet()) {
+            Object value = extrasMap.get(key);
+            String valueStr = String.valueOf(value);
+            // If type is text html, the extra text must sent as HTML
+            if (value instanceof Boolean) {
+                i.putExtra(key, Boolean.valueOf(valueStr));
+            } else if(value instanceof Integer) {
+                i.putExtra(key, Integer.valueOf(valueStr));
+            } else if(value instanceof Long) {
+                i.putExtra(key, Long.valueOf(valueStr));
+            } else if(value instanceof Double) {
+                i.putExtra(key, Double.valueOf(valueStr));
+            } else {
+                i.putExtra(key, valueStr);
+            }
+        }
+
+        this.reactContext.sendBroadcast(i);    
+    }
+
+    //  Credit: https://github.com/facebook/react-native/issues/4655
+    private Map<String, Object> recursivelyDeconstructReadableMap(ReadableMap readableMap) {
+        ReadableMapKeySetIterator iterator = readableMap.keySetIterator();
+        Map<String, Object> deconstructedMap = new HashMap<>();
+        while (iterator.hasNextKey()) {
+            String key = iterator.nextKey();
+            ReadableType type = readableMap.getType(key);
+            switch (type) {
+                case Null:
+                    deconstructedMap.put(key, null);
+                    break;
+                case Boolean:
+                    deconstructedMap.put(key, readableMap.getBoolean(key));
+                    break;
+                case Number:
+                    deconstructedMap.put(key, readableMap.getDouble(key));
+                    break;
+                case String:
+                    deconstructedMap.put(key, readableMap.getString(key));
+                    break;
+                case Map:
+                    deconstructedMap.put(key, recursivelyDeconstructReadableMap(readableMap.getMap(key)));
+                    break;
+                case Array:
+                    deconstructedMap.put(key, recursivelyDeconstructReadableArray(readableMap.getArray(key)));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Could not convert object with key: " + key + ".");
+            }
+
+        }
+        return deconstructedMap;
+    }
+
+    //  Credit: https://github.com/facebook/react-native/issues/4655
+    private List<Object> recursivelyDeconstructReadableArray(ReadableArray readableArray) {
+        List<Object> deconstructedList = new ArrayList<>(readableArray.size());
+        for (int i = 0; i < readableArray.size(); i++) {
+            ReadableType indexType = readableArray.getType(i);
+            switch(indexType) {
+                case Null:
+                    deconstructedList.add(i, null);
+                    break;
+                case Boolean:
+                    deconstructedList.add(i, readableArray.getBoolean(i));
+                    break;
+                case Number:
+                    deconstructedList.add(i, readableArray.getDouble(i));
+                    break;
+                case String:
+                    deconstructedList.add(i, readableArray.getString(i));
+                    break;
+                case Map:
+                    deconstructedList.add(i, recursivelyDeconstructReadableMap(readableArray.getMap(i)));
+                    break;
+                case Array:
+                    deconstructedList.add(i, recursivelyDeconstructReadableArray(readableArray.getArray(i)));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Could not convert object at index " + i + ".");
+            }
+        }
+        return deconstructedList;
     }
 
     @ReactMethod
