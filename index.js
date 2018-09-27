@@ -27,7 +27,11 @@ var DataWedgeIntents = {
     sendBroadcastWithExtras(extrasObject) {
         RNDataWedgeIntents.sendBroadcastWithExtras(extrasObject);
     },
+    registerBroadcastReceiver(filter) {
+        RNDataWedgeIntents.registerBroadcastReceiver(filter);
+    },
     registerReceiver(action, category) {
+        //  THIS METHOD IS DEPRECATED, use registerBroadcastReceiver
         RNDataWedgeIntents.registerReceiver(action, category);
     },
 };

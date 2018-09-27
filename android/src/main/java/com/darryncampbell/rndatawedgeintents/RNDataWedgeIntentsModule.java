@@ -31,6 +31,7 @@ import java.lang.SecurityException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -172,7 +173,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     }
 
     @ReactMethod
-    public void sendBroadcastWithExtras(ReadableMap obj)
+    public void sendBroadcastWithExtras(ReadableMap obj) throws JSONException
     {
         String action = obj.hasKey("action") ? obj.getString("action") : null;
         Intent i = new Intent();
@@ -197,7 +198,13 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
                 i.putExtra(key, Long.valueOf(valueStr));
             } else if(value instanceof Double) {
                 i.putExtra(key, Double.valueOf(valueStr));
-            } else {
+            } else if(valueStr.startsWith("{"))
+            {
+                //  UI has passed a JSON object
+                Bundle bundle = toBundle(new JSONObject(valueStr));
+                i.putExtra(key, bundle);
+            }
+            else {
                 i.putExtra(key, valueStr);
             }
         }
@@ -234,7 +241,6 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
                 default:
                     throw new IllegalArgumentException("Could not convert object with key: " + key + ".");
             }
-
         }
         return deconstructedMap;
     }
@@ -270,9 +276,63 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
         return deconstructedList;
     }
 
+    //  https://github.com/darryncampbell/darryncampbell-cordova-plugin-intent/blob/master/src/android/IntentShim.java
+    private Bundle toBundle(final JSONObject obj) {
+        Bundle returnBundle = new Bundle();
+        if (obj == null) {
+            return null;
+        }
+        try {
+            Iterator<?> keys = obj.keys();
+            while(keys.hasNext())
+            {
+                String key = (String)keys.next();
+                Object compare = obj.get(key);
+                if (obj.get(key) instanceof String)
+                    returnBundle.putString(key, obj.getString(key));
+                else if (obj.get(key) instanceof Boolean)
+                    returnBundle.putBoolean(key, obj.getBoolean(key));
+                else if (obj.get(key) instanceof Integer)
+                    returnBundle.putInt(key, obj.getInt(key));
+                else if (obj.get(key) instanceof Long)
+                    returnBundle.putLong(key, obj.getLong(key));
+                else if (obj.get(key) instanceof Double)
+                    returnBundle.putDouble(key, obj.getDouble(key));
+                else if (obj.get(key).getClass().isArray() || obj.get(key) instanceof JSONArray)
+                {
+                    JSONArray jsonArray = obj.getJSONArray(key);
+                    int length = jsonArray.length();
+                    if (jsonArray.get(0) instanceof String)
+                    {
+                        String[] stringArray = new String[length];
+                        for (int j = 0; j < length; j++)
+                            stringArray[j] = jsonArray.getString(j);
+                        returnBundle.putStringArray(key, stringArray);
+                        //returnBundle.putParcelableArray(key, obj.get);
+                    }
+                    else
+                    {
+                        Bundle[] bundleArray = new Bundle[length];
+                        for (int k = 0; k < length ; k++)
+                            bundleArray[k] = toBundle(jsonArray.getJSONObject(k));
+                        returnBundle.putParcelableArray(key, bundleArray);
+                    }
+                }
+                else if (obj.get(key) instanceof JSONObject)
+                    returnBundle.putBundle(key, toBundle((JSONObject)obj.get(key)));
+            }
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return returnBundle;
+    }
+
     @ReactMethod
     public void registerReceiver(String action, String category)
     {
+        //  THIS METHOD IS DEPRECATED
         Log.d(TAG, "Registering an Intent filter for action: " + action);
 		this.registeredAction = action;
 		this.registeredCategory = category;
@@ -290,6 +350,46 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
         if (category != null && category.length() > 0)
           filter.addCategory(category);
         this.reactContext.registerReceiver(scannedDataBroadcastReceiver, filter);
+    }
+
+    @ReactMethod
+    public void registerBroadcastReceiver(ReadableMap filterObj)
+    {
+        try
+        {
+            this.reactContext.unregisterReceiver(genericReceiver);
+        }
+        catch (IllegalArgumentException e)
+        {
+            //  Expected behaviour if there was not a previously registered receiver.
+        }
+        IntentFilter filter = new IntentFilter();
+        if (filterObj.hasKey("filterActions"))
+        {
+            ReadableType type = filterObj.getType("filterActions");
+            if (type == ReadableType.Array)
+            {
+                ReadableArray actionsArray = filterObj.getArray("filterActions");
+                for (int i = 0; i < actionsArray.size(); i++)
+                {
+                    filter.addAction(actionsArray.getString(i));
+                }
+            }
+        }
+        if (filterObj.hasKey("filterCategories"))
+        {
+            ReadableType type = filterObj.getType("filterCategories");
+            if (type == ReadableType.Array)
+            {
+                ReadableArray categoriesArray = filterObj.getArray("filterCategories");
+                for (int i = 0; i < categoriesArray.size(); i++)
+                {
+                    filter.addCategory(categoriesArray.getString(i));
+                }
+            }
+        }
+        this.reactContext.registerReceiver(genericReceiver, filter);
+
     }
 
     //  Broadcast receiver for the response to the Enumerate Scanner API
@@ -313,6 +413,16 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
         }
     };
 
+    public BroadcastReceiver genericReceiver = new BroadcastReceiver()
+    {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.v(TAG, "Received Broadcast from DataWedge");
+            intent.putExtra("v2API", true);
+            ObservableObject.getInstance().updateValue(intent);
+        }
+    };
+
     //  Sending events to JavaScript as defined in the native-modules documentation.  
     //  Note: Callbacks can only be invoked a single time so are not a suitable interface for barcode scans.
     private void sendEvent(ReactContext reactContext,
@@ -326,6 +436,16 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     public void update(Observable observable, Object data) 
     {            
       Intent intent = (Intent)data;
+
+      if (intent.hasExtra("v2API"))
+      {
+          Bundle intentBundle = intent.getExtras();
+          intentBundle.remove("com.symbol.datawedge.decode_data"); //  fb converter cannot cope with byte arrays
+          intentBundle.remove("com.motorolasolutions.emdk.datawedge.decode_data"); //  fb converter cannot cope with byte arrays
+          WritableMap map = Arguments.fromBundle(intentBundle);
+          sendEvent(this.reactContext, "datawedge_broadcast_intent", map);
+      }
+
       String action = intent.getAction();
       if (action.equals(ACTION_ENUMERATEDLISET)) 
       {
