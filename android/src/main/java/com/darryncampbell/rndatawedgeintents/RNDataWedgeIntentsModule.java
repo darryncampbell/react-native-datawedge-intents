@@ -73,7 +73,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     private static final String KEY_ENUMERATEDSCANNERLIST = "DWAPI_KEY_ENUMERATEDSCANNERLIST";
     //  END DEPRECATED PROPERTIES
 
-    //  Scan data receiver
+    //  Scan data receiver - These strings are only used by registerReceiver, a deprecated method
     private static final String RECEIVED_SCAN_SOURCE = "com.symbol.datawedge.source";
     private static final String RECEIVED_SCAN_DATA = "com.symbol.datawedge.data_string";
     private static final String RECEIVED_SCAN_TYPE = "com.symbol.datawedge.label_type";
@@ -89,7 +89,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       reactContext.addLifecycleEventListener(this);
       Log.v(TAG, "Constructing React native DataWedge intents module");
 
-      //  Register a broadcast receiver for the Enumerate Scanners intent
+      //  Register a broadcast receiver to return data back to the application
       ObservableObject.getInstance().addObserver(this);
     }
 
@@ -100,12 +100,21 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       filter.addAction(ACTION_ENUMERATEDLISET);
       reactContext.registerReceiver(myEnumerateScannersBroadcastReceiver, filter);
 	  if (this.registeredAction != null)
-		  registerReceiver(this.registeredAction, this.registeredCategory);
+          registerReceiver(this.registeredAction, this.registeredCategory);
+          
+      //  Note regarding registerBroadcastReceiver:
+      //  This module makes no attempt to unregister the receiver when the application is paused and re-registers the
+      //  receiver when the application comes to the foreground.  Feel free to fork and add this logic to your solution if
+      //  required - I have found in the past this has led to confusion.
     }
 
     @Override
     public void onHostPause() {
         //Log.v(TAG, "Host Pause");
+      //  Note regarding registerBroadcastReceiver:
+      //  This module makes no attempt to unregister the receiver when the application is paused and re-registers the
+      //  receiver when the application comes to the foreground.  Feel free to fork and add this logic to your solution if
+      //  required - I have found in the past this has led to confusion.
       try
       {
           this.reactContext.unregisterReceiver(myEnumerateScannersBroadcastReceiver);
@@ -135,11 +144,11 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       return "DataWedgeIntents";
     }
 
-
     @Override
     public Map<String, Object> getConstants() {
       final Map<String, Object> constants = new HashMap<>();
       //  These are the constants available to the caller
+      //  CONSTANTS HAVE BEEN DEPRECATED and will not stay current with the latest DW API
       constants.put("ACTION_SOFTSCANTRIGGER", ACTION_SOFTSCANTRIGGER);
       constants.put("ACTION_SCANNERINPUTPLUGIN", ACTION_SCANNERINPUTPLUGIN);
       constants.put("ACTION_ENUMERATESCANNERS", ACTION_ENUMERATESCANNERS);
@@ -157,6 +166,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     @ReactMethod
     public void sendIntent(String action, String parameterValue)
     {
+        //  THIS METHOD IS DEPRECATED, use SendBroadcastWithExtras
         Log.v(TAG, "Sending Intent with action: " + action + ", parameter: [" + parameterValue + "]");
         //  Some DW API calls use a different paramter name, abstract this from the caller.
         String parameterKey = EXTRA_PARAMETER;
@@ -175,6 +185,9 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     @ReactMethod
     public void sendBroadcastWithExtras(ReadableMap obj) throws JSONException
     {
+        //  Implementation note: Whilst this function will probably be able to deconstruct many ReadableMap objects
+        //  (originally JSON objects) to intents, no effort has been made to make this function generic beyond
+        //  support for the DataWedge API.
         String action = obj.hasKey("action") ? obj.getString("action") : null;
         Intent i = new Intent();
         if (action != null)
@@ -208,7 +221,6 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
                 i.putExtra(key, valueStr);
             }
         }
-
         this.reactContext.sendBroadcast(i);    
     }
 
@@ -332,7 +344,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     @ReactMethod
     public void registerReceiver(String action, String category)
     {
-        //  THIS METHOD IS DEPRECATED
+        //  THIS METHOD IS DEPRECATED, use registerBroadcastReceiver
         Log.d(TAG, "Registering an Intent filter for action: " + action);
 		this.registeredAction = action;
 		this.registeredCategory = category;
@@ -389,10 +401,10 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
             }
         }
         this.reactContext.registerReceiver(genericReceiver, filter);
-
     }
 
     //  Broadcast receiver for the response to the Enumerate Scanner API
+    //  THIS METHOD IS DEPRECATED, you should enumerate scanners as shown in https://github.com/darryncampbell/DataWedgeReactNative/blob/master/App.js
     public BroadcastReceiver myEnumerateScannersBroadcastReceiver = new BroadcastReceiver() 
     {    
         @Override
@@ -404,6 +416,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
 
     //  Broadcast receiver for the DataWedge intent being sent from Datawedge.  
     //  Note: DW must be configured to send broadcast intents
+    //  THIS METHOD IS DEPRECATED, you should enumerate scanners as shown in https://github.com/darryncampbell/DataWedgeReactNative/blob/master/App.js
     public BroadcastReceiver scannedDataBroadcastReceiver = new BroadcastReceiver() 
     {    
         @Override
@@ -431,7 +444,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
         reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, params);
     }
 
-    //  http://stackoverflow.com/questions/28083430/communication-between-broadcastreceiver-and-activity-android#30964385
+    //  Credit: http://stackoverflow.com/questions/28083430/communication-between-broadcastreceiver-and-activity-android#30964385
     @Override
     public void update(Observable observable, Object data) 
     {            
