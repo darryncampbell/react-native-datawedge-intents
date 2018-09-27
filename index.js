@@ -21,9 +21,17 @@ var DataWedgeIntents = {
     DISABLE_PLUGIN: RNDataWedgeIntents.DISABLE_PLUGIN,
 
     sendIntent(action, parameterValue) {
+        //  THIS METHOD IS DEPRECATED, use SendBroadcastWithExtras
         RNDataWedgeIntents.sendIntent(action, parameterValue);
     },
+    sendBroadcastWithExtras(extrasObject) {
+        RNDataWedgeIntents.sendBroadcastWithExtras(extrasObject);
+    },
+    registerBroadcastReceiver(filter) {
+        RNDataWedgeIntents.registerBroadcastReceiver(filter);
+    },
     registerReceiver(action, category) {
+        //  THIS METHOD IS DEPRECATED, use registerBroadcastReceiver
         RNDataWedgeIntents.registerReceiver(action, category);
     },
 };
