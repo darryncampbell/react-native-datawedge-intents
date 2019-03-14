@@ -18,8 +18,7 @@ public class RNDataWedgeIntentsPackage implements ReactPackage {
         modules.add(new RNDataWedgeIntentsModule(reactContext));
         return modules;
     }
-
-    @Override
+    
     public List<Class<? extends JavaScriptModule>> createJSModules() {
         return Collections.emptyList();
     }
