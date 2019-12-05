@@ -125,6 +125,14 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       }
       try
       {
+          this.reactContext.unregisterReceiver(genericReceiver);
+      }
+      catch (IllegalArgumentException e)
+      {
+          //  Expected behaviour if there was not a previously registered receiver.
+      }
+      try
+      {
           this.reactContext.unregisterReceiver(scannedDataBroadcastReceiver);
       }
       catch (IllegalArgumentException e)
