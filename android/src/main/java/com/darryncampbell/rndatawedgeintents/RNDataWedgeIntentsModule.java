@@ -96,16 +96,19 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
     @Override
     public void onHostResume() {
         //Log.v(TAG, "Host Resume");
-      IntentFilter filter = new IntentFilter();
-      filter.addAction(ACTION_ENUMERATEDLISET);
-      reactContext.registerReceiver(myEnumerateScannersBroadcastReceiver, filter);
-	  if (this.registeredAction != null)
+
+        //  Note regarding registerBroadcastReceiver:
+        //  This module makes no attempt to unregister the receiver when the application is paused and re-registers the
+        //  receiver when the application comes to the foreground.  Feel free to fork and add this logic to your solution if
+        //  required - I have found in the past this has led to confusion.
+        //  The logic below refers to the now deprecated broadcast receivers.
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_ENUMERATEDLISET);
+        reactContext.registerReceiver(myEnumerateScannersBroadcastReceiver, filter);
+	    if (this.registeredAction != null)
           registerReceiver(this.registeredAction, this.registeredCategory);
           
-      //  Note regarding registerBroadcastReceiver:
-      //  This module makes no attempt to unregister the receiver when the application is paused and re-registers the
-      //  receiver when the application comes to the foreground.  Feel free to fork and add this logic to your solution if
-      //  required - I have found in the past this has led to confusion.
     }
 
     @Override
@@ -115,6 +118,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       //  This module makes no attempt to unregister the receiver when the application is paused and re-registers the
       //  receiver when the application comes to the foreground.  Feel free to fork and add this logic to your solution if
       //  required - I have found in the past this has led to confusion.
+      //  The logic below refers to the now deprecated broadcast receivers.
       try
       {
           this.reactContext.unregisterReceiver(myEnumerateScannersBroadcastReceiver);
@@ -426,7 +430,7 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
         }
     };
 
-    public BroadcastReceiver genericReceiver = new BroadcastReceiver()
+    public static BroadcastReceiver genericReceiver = new BroadcastReceiver()
     {
         @Override
         public void onReceive(Context context, Intent intent) {
