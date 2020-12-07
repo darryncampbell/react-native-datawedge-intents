@@ -457,10 +457,11 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       if (intent.hasExtra("v2API"))
       {
           Bundle intentBundle = intent.getExtras();
-          
-          // Remove byte arrays (fb converter cannot cope with byte arrays)
-          for (String key : intentBundle.keySet()) {
-              if (intentBundle.get(key) instanceof byte[]) {
+
+          // Remove arrays (fb converter cannot cope with byte arrays)
+          for (String key : new ArrayList<String>(intentBundle.keySet())) {
+              Object extraValue = intentBundle.get(key);
+              if (extraValue instanceof byte[] || extraValue instanceof ArrayList || extraValue instanceof ArrayList<?>) {
                   intentBundle.remove(key);
               }
           }
