@@ -457,8 +457,14 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
       if (intent.hasExtra("v2API"))
       {
           Bundle intentBundle = intent.getExtras();
-          intentBundle.remove("com.symbol.datawedge.decode_data"); //  fb converter cannot cope with byte arrays
-          intentBundle.remove("com.motorolasolutions.emdk.datawedge.decode_data"); //  fb converter cannot cope with byte arrays
+          
+          // Remove byte arrays (fb converter cannot cope with byte arrays)
+          for (String key : intentBundle.keySet()) {
+              if (intentBundle.get(key) instanceof byte[]) {
+                  intentBundle.remove(key);
+              }
+          }
+          
           WritableMap map = Arguments.fromBundle(intentBundle);
           sendEvent(this.reactContext, "datawedge_broadcast_intent", map);
       }
