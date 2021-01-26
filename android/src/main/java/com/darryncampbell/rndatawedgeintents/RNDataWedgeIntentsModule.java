@@ -326,6 +326,13 @@ public class RNDataWedgeIntentsModule extends ReactContextBaseJavaModule impleme
                         returnBundle.putStringArray(key, stringArray);
                         //returnBundle.putParcelableArray(key, obj.get);
                     }
+                    else if (jsonArray.get(0) instanceof Double)
+                    {
+                        int[] intArray = new int[length];
+                        for (int j = 0; j < length; j++)
+                            intArray[j] = jsonArray.getInt(j);
+                        returnBundle.putIntArray(key, intArray);
+                    }
                     else
                     {
                         Bundle[] bundleArray = new Bundle[length];
