@@ -40,7 +40,7 @@ try {
         },
     };
 } catch (error) {
-    console.warn("DataWedgeIntents is not available");
+    console.error("DataWedgeIntents is not available");
 }
 
 
